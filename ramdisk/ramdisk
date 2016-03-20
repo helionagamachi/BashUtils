@@ -1,0 +1,69 @@
+#!/bin/bash
+
+function printHelp (){
+  echo "help";
+}
+
+
+function parseFileAnd() {
+  if [[ -f ~/.ramdisks ]]; then
+    #read file line by line
+    while read -r line || [[ -n "$line" ]]; do
+      # first argument is the size, second is the path
+      size=`echo "$line" | cut -d ',' -f 1 --`;
+      path=`echo "$line" | cut -d ',' -f 2 --`;
+      case "$1" in
+        mount)
+          makeMount "$size" "$path"
+          ;;
+        umount)
+          undoMount "$path"
+          ;;
+      esac
+    done < ~/.ramdisks
+  else
+    echo "You need to create a .ramdisks file on $HOME";
+  fi
+}
+
+function makeMount() {
+  size=$1
+  path=$2
+  if [[ $size =~ ^[0-9]+(m|g|M|G)$ ]] && [[ -d "$path" ]]; then
+    mount | grep "$path" > /dev/null
+    if [[ $? -ne 0 ]] && [[ -z `ls "$path"` ]]; then
+      # the mount wasn't done yet and
+      # the path seems to point to an empty folder
+      sudo mount -t tmpfs -o size="$size" tmpfs "$path";
+    fi
+  fi
+}
+
+function undoMount() {
+  mount | grep " $path " > /dev/null
+  if [[ $? -eq 0 ]]; then
+    sudo umount "$path";
+  fi
+}
+
+if [[ $# -eq 0 ]]; then
+  parseFileAnd "mount"
+else
+  if [[ $# -eq 1 ]]; then
+    case "$1" in
+      mount)
+      parseFileAnd "mount"
+      ;;
+      umount)
+      parseFileAnd "umount"
+      ;;
+      *)
+      printHelp
+      ;;
+    esac
+  else
+    echo "too many args";
+    printHelp
+    exit 1;
+  fi
+fi
