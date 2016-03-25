@@ -1,0 +1,21 @@
+#!/bin/bash
+
+sudo ls -l /var/lib/docker/volumes | tail -n +2 | rev | cut -d ' ' -f 1 | rev \
+| sort > /tmp/all-volumes
+
+ docker ps -a | tail -n +2 | rev |cut -d ' ' -f 1 | rev | xargs docker inspect \
+| grep volumes | grep -oE /[a-f0-9]+/ | grep -oE [0-9a-f]+ | sort | uniq > /tmp/used-volumes
+
+diff /tmp/{all,used}-volumes > /dev/null
+
+if [[ $? -ne 0 ]]; then
+  echo "You have the following volumes that are not associated with a container"
+  diff /tmp/{all,used}-volumes | grep -e '^<' | grep -oE '[0-9a-f]+'
+  echo "The total disk space used by them is:"
+  diff /tmp/{all,used}-volumes | grep -e '^<' | grep -oE '[0-9a-f]+' \
+  | sed -e 's/^/\/var\/lib\/docker\/volumes\//' | xargs sudo du -sch | tail -n 1 | cut -f 1
+else
+  echo  "No unused volumes found"
+fi
+
+rm /tmp/{all,used}-volumes
