@@ -20,7 +20,7 @@ files that won't really help me while developing every time that I hit
 `CTRL + S` to save my work.
 
 Also I am using Docker to do most of my work, for that reason I cannot make
-a sysmlink to a ramdisk that is mounted outside the directory shared with the
+a symbolic link to a ramdisk that is mounted outside the directory shared with the
 container.
 
 ### Usage
